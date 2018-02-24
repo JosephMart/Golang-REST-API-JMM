@@ -88,6 +88,7 @@ func CreateRoutes(r *mux.Router, routes []Endpoint, rootURL string) {
 		for k, m := range e.methods {
 			if e.secure {
 				r.Handle(rootURL+e.path, jwtMiddleware.Handler(m)).Methods(k)
+				// r.Handle(rootURL+e.path, authMiddleware(m)).Methods(k)
 			} else {
 				r.Handle(rootURL+e.path, m).Methods(k)
 			}

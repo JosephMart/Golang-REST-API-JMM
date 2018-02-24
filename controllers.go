@@ -2,15 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/auth0-community/auth0"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
+	jose "gopkg.in/square/go-jose.v2"
 )
 
 // Get all books
@@ -110,3 +113,24 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 	},
 	SigningMethod: jwt.SigningMethodHS256,
 })
+
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// secret := []byte("lbrhySqOxk2NyRIVYCy6kHBI9dD7kOdF")
+		secretProvider := auth0.NewKeyProvider(SECRET)
+
+		configuration := auth0.NewConfiguration(secretProvider, AUDIENCE, AUTH0PATH, jose.HS256)
+		validator := auth0.NewValidator(configuration)
+
+		token, err := validator.ValidateRequest(r)
+
+		if err != nil {
+			fmt.Println(err)
+			fmt.Println("Token is not valid:", token)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+}
