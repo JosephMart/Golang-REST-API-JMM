@@ -15,6 +15,9 @@ import (
 // BaseURL is base of the api of the app
 var BaseURL = "/api"
 
+// Set up a global string for our secret
+var mySigningKey = []byte("secret")
+
 // Init books var as a slice Book struct
 var books []Book
 

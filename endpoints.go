@@ -42,29 +42,22 @@ Performs a message loop-back test along the path to the target resource.
 type Endpoint struct {
 	path      string
 	subRoutes []Endpoint
-	methods   map[string]func(w http.ResponseWriter, r *http.Request)
+	methods   map[string]http.Handler
+	secure    bool
 }
-
-// EndpointDecorator make sure to log each time an endpoint is hit
-// func EndpointDecorator(f func(w http.ResponseWriter, r *http.Request), path string, method string) func(w http.ResponseWriter, r *http.Request) {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		Info.Println(method + " " + path)
-// 		f(w, r)
-// 	}
-// }
 
 // AllRoutes for api
 var AllRoutes = [...]Endpoint{
 	Endpoint{
 		path: "/books",
-		methods: map[string]func(w http.ResponseWriter, r *http.Request){
+		methods: map[string]http.Handler{
 			http.MethodGet:  getBooks,
 			http.MethodPost: createBook,
 		},
 		subRoutes: []Endpoint{
 			Endpoint{
 				path: "/{id}",
-				methods: map[string]func(w http.ResponseWriter, r *http.Request){
+				methods: map[string]http.Handler{
 					http.MethodGet:    getBook,
 					http.MethodPut:    updateBook,
 					http.MethodDelete: deleteBook,
@@ -74,8 +67,15 @@ var AllRoutes = [...]Endpoint{
 	},
 	Endpoint{
 		path: "/HealthCheckHandler",
-		methods: map[string]func(w http.ResponseWriter, r *http.Request){
+		methods: map[string]http.Handler{
 			http.MethodGet: HealthCheckHandler,
+		},
+		secure: true,
+	},
+	Endpoint{
+		path: "/get-token",
+		methods: map[string]http.Handler{
+			http.MethodGet: GetTokenHandler,
 		},
 	},
 }
@@ -86,7 +86,11 @@ func CreateRoutes(r *mux.Router, routes []Endpoint, rootURL string) {
 	for _, e := range routes {
 		// Loop through methods
 		for k, m := range e.methods {
-			r.HandleFunc(rootURL+e.path, m).Methods(k)
+			if e.secure {
+				r.Handle(rootURL+e.path, jwtMiddleware.Handler(m)).Methods(k)
+			} else {
+				r.Handle(rootURL+e.path, m).Methods(k)
+			}
 		}
 		// Recurse if there are subRoutes
 		if len(e.subRoutes) > 0 {
