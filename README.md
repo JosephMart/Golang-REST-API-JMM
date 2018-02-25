@@ -10,6 +10,6 @@ go get github.com/josephmart/Golang-REST-API-JMM
 
 ## Run
 ```bash
-cd $GOPATH/src/github.com/josephmart/Golang-REST-API-JMM
- go build && ./rest-api
+cd $GOPATH/src/github.com/josephmart/rest-api-jmm
+ go build && ./rest-api-jmm
  ```
